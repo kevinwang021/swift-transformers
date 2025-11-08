@@ -88,7 +88,7 @@ public struct HubApi: Sendable {
     /// Initializes a new Hub API client.
     ///
     /// - Parameters:
-    ///   - downloadBase: The base directory for downloads (defaults to Documents/huggingface)
+    ///   - downloadBase: The base directory for downloads. if nil, a platform-specific default is used.
     ///   - hfToken: The Hugging Face authentication token (defaults to environment variable)
     ///   - endpoint: The Hub endpoint URL (defaults to https://huggingface.co)
     ///   - useBackgroundSession: Whether to use background URL sessions for downloads
@@ -109,8 +109,15 @@ public struct HubApi: Sendable {
         if let downloadBase {
             self.downloadBase = downloadBase
         } else {
+            #if os(macOS)
+            // On macOS, default to the python-compatible cache directory
+            let homeDirectory = FileManager.default.homeDirectoryForCurrentUser
+            self.downloadBase = homeDirectory.appendingPathComponent(".cache").appendingPathComponent("huggingface")
+            #else
+            // On iOS, visionOS, etc., default to the sandboxed Documents directory
             let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
             self.downloadBase = documents.appending(component: "huggingface")
+            #endif
         }
         self.endpoint = endpoint ?? Self.hfEndpointfromEnv()
         self.useBackgroundSession = useBackgroundSession
@@ -344,8 +351,12 @@ public extension HubApi {
 
 /// Snaphsot download
 public extension HubApi {
+    /// This function now creates a path compatible with huggingface_hub (Python).
+    /// e.g., ~/.cache/huggingface/hub/models--mlx-community--gemma-2-2b-it-4bit
     func localRepoLocation(_ repo: Repo) -> URL {
-        downloadBase.appending(component: repo.type.rawValue).appending(component: repo.id)
+//        downloadBase.appending(component: repo.type.rawValue).appending(component: repo.id)
+        let dirname = "\(repo.type.rawValue)--\(repo.id.replacingOccurrences(of: "/", with: "--"))"
+        return downloadBase.appending(component: "hub").appending(component: dirname)
     }
 
     /// Reads metadata about a file in the local directory related to a download process.
