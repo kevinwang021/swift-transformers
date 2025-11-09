@@ -123,6 +123,7 @@ public struct HubApi: Sendable {
             self.downloadBase = documents.appending(component: "huggingface")
             #endif
         }
+        print("downloadBase: \(self.downloadBase.path)")
         self.endpoint = endpoint ?? Self.hfEndpointfromEnv()
         self.useBackgroundSession = useBackgroundSession
         self.useOfflineMode = useOfflineMode
@@ -355,12 +356,8 @@ public extension HubApi {
 
 /// Snaphsot download
 public extension HubApi {
-    /// This function now creates a path compatible with huggingface_hub (Python).
-    /// e.g., ~/.cache/huggingface/hub/models--mlx-community--gemma-2-2b-it-4bit
     func localRepoLocation(_ repo: Repo) -> URL {
-//        downloadBase.appending(component: repo.type.rawValue).appending(component: repo.id)
-        let dirname = "\(repo.type.rawValue)--\(repo.id.replacingOccurrences(of: "/", with: "--"))"
-        return downloadBase.appending(component: "hub").appending(component: dirname)
+        downloadBase.appending(component: repo.type.rawValue).appending(component: repo.id)
     }
 
     /// Reads metadata about a file in the local directory related to a download process.
