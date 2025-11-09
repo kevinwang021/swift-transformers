@@ -110,9 +110,13 @@ public struct HubApi: Sendable {
             self.downloadBase = downloadBase
         } else {
             #if os(macOS)
-            // On macOS, default to the python-compatible cache directory
-            let homeDirectory = FileManager.default.homeDirectoryForCurrentUser
-            self.downloadBase = homeDirectory.appendingPathComponent(".cache").appendingPathComponent("huggingface")
+            if let hfHome = ProcessInfo.processInfo.environment["HF_HOME"] {
+                self.downloadBase = URL(filePath: NSString(string: hfHome).expandingTildeInPath)
+            } else {
+                // On macOS, default to the python-compatible cache directory
+                let homeDirectory = FileManager.default.homeDirectoryForCurrentUser
+                self.downloadBase = homeDirectory.appendingPathComponent(".cache").appendingPathComponent("huggingface")
+            }
             #else
             // On iOS, visionOS, etc., default to the sandboxed Documents directory
             let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
